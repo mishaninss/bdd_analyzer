@@ -12,6 +12,12 @@
     <name>BDD tests analyzer</name>
     <url>https://github.com/mishaninss/bdd_analyzer</url>
 
+    <developers>
+        <developer>
+            <name>Sergei Mishanin</name>
+            <email>example@gmail.com</email>
+        </developer>
+    </developers>
     <properties>
         <!--Project settings-->
         <java.version>1.8</java.version>
