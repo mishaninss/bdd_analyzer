@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,9 +19,9 @@ import java.util.stream.Collectors;
 @Data
 public class ArmaFeature extends ArmaNode{
     private ArmaLocation location;
-    private List<ArmaTag> tags;
+    private List<ArmaTag> tags = new LinkedList<>();
     private ArmaBackground background;
-    private List<ArmaScenario> scenarios;
+    private List<ArmaScenario> scenarios = new LinkedList<>();
 
     public ArmaFeature(){
         setKeyword("Feature");

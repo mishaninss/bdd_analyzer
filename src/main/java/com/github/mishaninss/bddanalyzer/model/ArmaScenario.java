@@ -8,6 +8,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,8 +18,8 @@ import java.util.stream.Collectors;
 @Data
 public class ArmaScenario extends ArmaNode{
     protected ArmaLocation location;
-    protected List<ArmaStep> steps;
-    protected List<ArmaTag> tags;
+    protected List<ArmaStep> steps = new LinkedList<>();
+    protected List<ArmaTag> tags = new LinkedList<>();
 
     public ArmaScenario(){
         setKeyword("Scenario");
@@ -107,9 +108,6 @@ public class ArmaScenario extends ArmaNode{
             return;
         } else {
             steps.replaceAll(step -> {
-                System.out.println("step: " + step);
-                System.out.println("old: " + oldStep);
-                System.out.println("new: " + newStep);
                 if (step.equals(oldStep)){
                     return newStep;
                 } else {
@@ -131,11 +129,7 @@ public class ArmaScenario extends ArmaNode{
                 .append(ArmaFeature.addPad(description));
         }
         if (steps != null) {
-            steps.forEach(step ->
-            {
-                sb.append("\n")
-                        .append(ArmaFeature.addPad(step.toString()));
-            });
+            steps.forEach(step -> sb.append("\n").append(ArmaFeature.addPad(step.toString())));
         }
         return sb.toString();
     }
