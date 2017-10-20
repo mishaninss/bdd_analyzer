@@ -2,6 +2,7 @@ package com.github.mishaninss.bddanalyzer.model;
 
 import gherkin.ast.Location;
 import lombok.Data;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Created by Sergey_Mishanin on 11/17/16.
@@ -36,5 +37,9 @@ public class ArmaLocation {
     @Override
     public String toString(){
         return file + " " + line + ":" + column;
+    }
+
+    public String toShortString(){
+        return FilenameUtils.getName(file) + " " + line + ":" + column;
     }
 }

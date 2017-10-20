@@ -4,22 +4,22 @@ import gherkin.ast.Location;
 import gherkin.ast.Scenario;
 import gherkin.ast.Tag;
 import lombok.Data;
+import lombok.NonNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Created by Sergey_Mishanin on 11/16/16.
  */
 @Data
-public class ArmaScenario extends ArmaNode{
+public class ArmaScenario extends ArmaNode implements HasTags{
     protected ArmaLocation location;
     protected List<ArmaStep> steps = new LinkedList<>();
-    protected List<ArmaTag> tags = new LinkedList<>();
+    protected Set<ArmaTag> tags = new LinkedHashSet<>();
 
     public ArmaScenario(){
         setKeyword("Scenario");
@@ -34,6 +34,23 @@ public class ArmaScenario extends ArmaNode{
         setLocation(gherkinScenario.getLocation());
     }
 
+    public ArmaScenario(@NonNull ArmaScenario scenario){
+        setKeyword(scenario.getKeyword());
+        setName(scenario.getName());
+        setDescription(scenario.getDescription());
+        setLocation(new ArmaLocation(scenario.getLocation()));
+        steps = new ArrayList<>();
+        List<ArmaStep> originSteps = scenario.getSteps();
+        if (CollectionUtils.isNotEmpty(originSteps)){
+            originSteps.forEach(originStep -> steps.add(new ArmaStep(originStep)));
+        }
+        tags = new LinkedHashSet<>();
+        Set<ArmaTag> originTags = scenario.getTags();
+        if (CollectionUtils.isNotEmpty(originTags)){
+            originTags.forEach(originTag -> addTag(new ArmaTag(originTag)));
+        }
+    }
+
     public void setGherkinSteps(List<gherkin.ast.Step> gherkinSteps){
         if (CollectionUtils.isEmpty(gherkinSteps)){
             return;
@@ -45,7 +62,7 @@ public class ArmaScenario extends ArmaNode{
         if (CollectionUtils.isEmpty(gherkinTags)){
             return;
         }
-        tags = gherkinTags.stream().map(ArmaTag::new).collect(Collectors.toList());
+        gherkinTags.forEach(gherkinTag -> tags.add(new ArmaTag(gherkinTag)));
     }
 
     public void setLocation(Location gherkinLocation){
@@ -115,6 +132,15 @@ public class ArmaScenario extends ArmaNode{
                 }
             });
         }
+    }
+
+    public boolean hasStep(ArmaStepDef stepDef){
+        for(ArmaStep step: steps){
+            if (step.isImplemented() && Objects.equals(step.getStepDef(), stepDef)){
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

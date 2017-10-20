@@ -40,8 +40,8 @@ public class ArmaScenarioOutline extends ArmaScenario {
         if (CollectionUtils.isNotEmpty(originSteps)){
             originSteps.forEach(originStep -> steps.add(new ArmaStep(originStep)));
         }
-        tags = new ArrayList<>();
-        List<ArmaTag> originTags = scenarioOutline.getTags();
+        tags = new LinkedHashSet<>();
+        Set<ArmaTag> originTags = scenarioOutline.getTags();
         if (CollectionUtils.isNotEmpty(originTags)){
             originTags.forEach(originTag -> tags.add(new ArmaTag(originTag)));
         }

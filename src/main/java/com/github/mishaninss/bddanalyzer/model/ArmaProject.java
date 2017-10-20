@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by Sergey_Mishanin on 9/29/17.
@@ -35,17 +36,16 @@ public class ArmaProject {
     }
 
     public List<ArmaScenario> getScenarios(){
-        List<ArmaScenario> scenarios = new LinkedList<>();
-        getFeatures().forEach(feature -> scenarios.addAll(feature.getScenarios()));
-        return scenarios;
+        return getFeatures().stream()
+                .flatMap(feature -> feature.getScenarios().stream())
+                .collect(Collectors.toList());
     }
 
     public List<ArmaScenarioOutline> getScenarioOutlines(){
-        List<ArmaScenarioOutline> scenarioOutlines = new LinkedList<>();
-        getScenarios().stream()
+        return getScenarios().stream()
                 .filter(scenario -> scenario instanceof ArmaScenarioOutline)
-                .forEach(scenario -> scenarioOutlines.add((ArmaScenarioOutline) scenario));
-        return scenarioOutlines;
+                .map(scenario -> (ArmaScenarioOutline) scenario)
+                .collect(Collectors.toList());
     }
 
     public List<ArmaStep> getNotImplementedSteps(){
@@ -61,17 +61,17 @@ public class ArmaProject {
     }
 
     public List<ArmaBackground> getBackgrounds(){
-        return features.stream()
-                .filter(feature -> feature.getBackground() != null)
+        return getFeatures().stream()
+                .filter(ArmaFeature::hasBackground)
                 .map(ArmaFeature::getBackground)
                 .collect(Collectors.toList());
     }
 
     public List<ArmaStep> getSteps(){
-        List<ArmaStep> steps = new ArrayList<>();
-        getBackgrounds().forEach(background -> steps.addAll(background.getSteps()));
-        getScenarios().forEach(scenario -> steps.addAll(scenario.getSteps()));
-        return steps;
+        return Stream.concat(
+            getBackgrounds().stream().flatMap(background -> background.getSteps().stream()),
+            getScenarios().stream().flatMap(scenario -> scenario.getSteps().stream())
+        ).collect(Collectors.toList());
     }
 
     public Set<ArmaTag> getTags(){
@@ -147,7 +147,7 @@ public class ArmaProject {
 
         features.forEach(feature ->
         {
-            if (feature.getBackground() != null){
+            if (feature.hasBackground()){
                 feature.getBackground().getSteps().forEach(step -> applyStepDef(stepDefs, step, step.getText()));
             }
             feature.getScenarios().forEach(scenario ->
@@ -165,6 +165,155 @@ public class ArmaProject {
                 }
             });
         });
+    }
+
+    public Map<ArmaTag, int[]> getTagsUsage(){
+        Map<ArmaTag, int[]> usage = new LinkedHashMap<>();
+        features.forEach(feature -> {
+            if (feature.hasTags()){
+                feature.getTags().forEach(tag -> {
+                    int[] count = usage.getOrDefault(tag, new int[]{0,0,0,0});
+                    count[0] = count[0] + 1;
+                    usage.put(tag, count);
+                });
+            }
+        });
+
+        getBackgrounds().forEach(background -> {
+            if (background.hasTags()){
+                background.getTags().forEach(tag -> {
+                    int[] count = usage.getOrDefault(tag, new int[]{0,0,0,0});
+                    count[1] = count[1] + 1;
+                    usage.put(tag, count);
+                });
+            }
+        });
+
+        getScenarios().forEach(scenario -> {
+            if (scenario.hasTags()) {
+                scenario.getTags().forEach(tag -> {
+                    int[] count = usage.getOrDefault(tag, new int[]{0,0,0,0});
+                    count[2] = count[2] + 1;
+                    usage.put(tag, count);
+                });
+            }
+
+            if (scenario instanceof ArmaScenarioOutline) {
+                List<ArmaExamples> examples = ((ArmaScenarioOutline) scenario).getExamples();
+                if (CollectionUtils.isNotEmpty(examples)) {
+                    examples.forEach(ex -> {
+                        if (ex.hasTags()) {
+                            ex.getTags().forEach(tag -> {
+                                int[] count = usage.getOrDefault(tag, new int[]{0,0,0,0});
+                                count[3] = count[3] + 1;
+                                usage.put(tag, count);
+                            });
+                        }
+                    });
+                }
+            }
+        });
+        return usage;
+    }
+
+    public void printTagUsage(){
+        Map<ArmaTag, int[]> usage = getTagsUsage();
+        ArmaDataTable table = new ArmaDataTable();
+        table.addRow("Tag", "Features", "Backgrounds", "Scenarios", "Examples");
+        usage.entrySet().stream()
+                .sorted((o1, o2) -> {
+                    Integer total1 = Arrays.stream(o1.getValue()).sum();
+                    Integer total2 = Arrays.stream(o2.getValue()).sum();
+                    return total2.compareTo(total1);
+                })
+                .forEach(entry ->
+                    table.addRow(entry.getKey().getName(),
+                            String.valueOf(entry.getValue()[0]),
+                            String.valueOf(entry.getValue()[1]),
+                            String.valueOf(entry.getValue()[2]),
+                            String.valueOf(entry.getValue()[3]))
+                );
+        System.out.println(table);
+    }
+
+    public List<List<ArmaStepDef>> getStepDefScenarios(){
+        List<List<ArmaStepDef>> scenarios = new LinkedList<>();
+        getScenarios().forEach(scenario -> {
+
+        });
+        return scenarios;
+    }
+
+    public Map<ArmaStepDef, Integer> getStepDefsUsage(){
+        Map<ArmaStepDef, Integer> usage = new LinkedHashMap<>();
+        getSteps().forEach(step -> {
+            if (step.isImplemented()){
+                usage.put(step.getStepDef(), usage.getOrDefault(step.getStepDef(), 0) + 1);
+            }
+        });
+        return usage;
+    }
+
+    public void printStepDefsUsage(){
+        Map<ArmaStepDef, Integer> usage = getStepDefsUsage();
+        ArmaDataTable table = new ArmaDataTable();
+        usage.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry::getValue))
+                .forEach(entry -> {
+                    table.addRow(new ArmaTableRow(entry.getKey().getText(), entry.getValue().toString()));
+                    table.addRow(new ArmaTableRow(entry.getKey().getLocation().toShortString(), ""));
+                    table.addRow(new ArmaTableRow("", ""));
+                });
+        System.out.println(table);
+    }
+
+    public List<Map<ArmaScenario, String>> findDuplicatedScenarios(){
+        List<Map<ArmaScenario, String>> allDuplicates = new LinkedList<>();
+        List<ArmaScenario> scenarios = getScenarios();
+        while (!scenarios.isEmpty()){
+            Iterator<ArmaScenario> iterator = scenarios.iterator();
+            ArmaScenario scenario = iterator.next();
+            iterator.remove();
+
+            Map<ArmaScenario, String> duplicates = new LinkedHashMap<>();
+            duplicates.put(scenario, "ORIGIN");
+
+            while (iterator.hasNext()){
+                ArmaScenario anotherScenario = iterator.next();
+                if (scenario.isFullyEqualTo(anotherScenario)){
+                    duplicates.put(anotherScenario, "FULL");
+                    iterator.remove();
+                } else if (scenario.isEqualToIgnoreParameters(anotherScenario)){
+                    duplicates.put(anotherScenario, "IGNORE PARAMETERS");
+                    iterator.remove();
+                }
+            }
+            if (duplicates.size()>1) {
+                allDuplicates.add(duplicates);
+            }
+        }
+        return allDuplicates;
+    }
+
+    public void printDuplicatedScenarios(){
+        List<Map<ArmaScenario, String>> allDuplicates = findDuplicatedScenarios();
+        ArmaDataTable table = new ArmaDataTable();
+        table.addRow("SCENARIO", "LOCATION", "EQUALITY");
+        table.addRow("", "", "");
+        allDuplicates.forEach(map -> {
+            map.forEach((key, value) -> {
+                table.addRow(key.getName(), key.getLocation().toShortString(), value);
+            });
+            table.addRow("", "", "");
+        });
+        System.out.println(table);
+    }
+
+    public List<ArmaFeature> applyTagFilters(String... tagFilters){
+        return getFeatures().stream()
+            .map(feature -> feature.applyTagFilters(tagFilters))
+            .filter(ArmaFeature::hasScenarios)
+            .collect(Collectors.toList());
     }
 
     private static void applyStepDef(List<ArmaStepDef> stepDefs, ArmaStep step, String text){
@@ -187,4 +336,5 @@ public class ArmaProject {
             }
         }
     }
+
 }

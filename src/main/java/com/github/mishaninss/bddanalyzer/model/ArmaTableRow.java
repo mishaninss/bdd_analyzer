@@ -161,6 +161,10 @@ public class ArmaTableRow {
         return addCell(new ArmaTableCell(value));
     }
 
+    public int addCell(Object value){
+        return addCell(new ArmaTableCell(value.toString()));
+    }
+
     @Override
     public String toString(){
         if (CollectionUtils.isEmpty(cells)){

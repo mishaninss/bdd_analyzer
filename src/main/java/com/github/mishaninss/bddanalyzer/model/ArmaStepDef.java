@@ -22,4 +22,8 @@ public class ArmaStepDef {
                 .append("implemented", implemented)
                 .toString();
     }
+
+    public ArmaTableRow toTableRow(){
+        return new ArmaTableRow(text, location.toShortString());
+    }
 }

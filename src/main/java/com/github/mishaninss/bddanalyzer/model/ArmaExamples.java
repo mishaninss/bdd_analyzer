@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
  * Created by Sergey_Mishanin on 11/16/16.
  */
 @Data
-public class ArmaExamples {
-    private List<ArmaTag> tags;
+public class ArmaExamples implements HasTags{
+    private Set<ArmaTag> tags = new LinkedHashSet<>();
     private String keyword = "Examples";
     private String name = "";
     private String description;
@@ -45,38 +45,6 @@ public class ArmaExamples {
         setDescription(gherkinExamples.getDescription());
         setTableHeader(gherkinExamples.getTableHeader());
         setGherkinTableBody(gherkinExamples.getTableBody());
-    }
-
-    public List<ArmaTag> getTags(){
-        if (tags == null){
-            tags = new ArrayList<>();
-        }
-        return tags;
-    }
-
-    public void addTag(ArmaTag tag){
-        List<ArmaTag> thisTags = getTags();
-        if (!thisTags.contains(tag)){
-            thisTags.add(tag);
-        }
-    }
-
-    public void addTag(String tagName){
-        addTag(new ArmaTag(tagName));
-    }
-
-    public void addTags(Iterable<ArmaTag> newTags){
-        if (newTags == null){
-            return;
-        }
-        newTags.forEach(this::addTag);
-    }
-
-    public void addTags(List<String> newTagNames){
-        if (newTagNames == null){
-            return;
-        }
-        newTagNames.forEach(this::addTag);
     }
 
     public List<ArmaTableRow> getTableBody(){
@@ -348,10 +316,6 @@ public class ArmaExamples {
             return;
         }
         setTags(gherkinTags.stream().map(ArmaTag::new).collect(Collectors.toList()));
-    }
-
-    public void setTags(List<ArmaTag> tags){
-        this.tags = tags;
     }
 
     public void setTableHeader(TableRow gherkinTableHeader){

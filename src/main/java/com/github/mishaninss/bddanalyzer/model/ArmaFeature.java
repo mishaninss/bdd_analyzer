@@ -2,13 +2,12 @@ package com.github.mishaninss.bddanalyzer.model;
 
 import gherkin.ast.*;
 import lombok.Data;
+import lombok.NonNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -17,9 +16,9 @@ import java.util.stream.Collectors;
  * Created by Sergey_Mishanin on 11/16/16.
  */
 @Data
-public class ArmaFeature extends ArmaNode{
+public class ArmaFeature extends ArmaNode implements HasTags{
     private ArmaLocation location;
-    private List<ArmaTag> tags = new LinkedList<>();
+    private Set<ArmaTag> tags = new LinkedHashSet<>();
     private ArmaBackground background;
     private List<ArmaScenario> scenarios = new LinkedList<>();
 
@@ -27,7 +26,7 @@ public class ArmaFeature extends ArmaNode{
         setKeyword("Feature");
     }
 
-    public ArmaFeature(Feature gherkinFeature){
+    public ArmaFeature(@NonNull Feature gherkinFeature){
         setGherkinTags(gherkinFeature.getTags());
         setKeyword(gherkinFeature.getKeyword());
         setName(gherkinFeature.getName());
@@ -36,11 +35,36 @@ public class ArmaFeature extends ArmaNode{
         setLocation(gherkinFeature.getLocation());
     }
 
+    public ArmaFeature(@NonNull ArmaFeature feature){
+        setKeyword(feature.getKeyword());
+        setName(feature.getName());
+        setDescription(feature.getDescription());
+        setLocation(new ArmaLocation(feature.getLocation()));
+
+        if (feature.hasTags()){
+            feature.getTags().forEach(originTag -> addTag(new ArmaTag(originTag)));
+        }
+
+        if (feature.hasBackground()) {
+            setBackground(new ArmaBackground(feature.getBackground()));
+        }
+
+        if (feature.hasScenarios()){
+            feature.getScenarios().forEach(originScenario -> {
+                if (originScenario instanceof ArmaScenarioOutline){
+                    scenarios.add(new ArmaScenarioOutline((ArmaScenarioOutline) originScenario));
+                } else {
+                    scenarios.add(new ArmaScenario(originScenario));
+                }
+            });
+        }
+    }
+
     public void setGherkinTags(List<Tag> gherkinTags){
         if (CollectionUtils.isEmpty(gherkinTags)){
             return;
         }
-        tags = gherkinTags.stream().map(ArmaTag::new).collect(Collectors.toList());
+        tags = gherkinTags.stream().map(ArmaTag::new).collect(Collectors.toSet());
     }
 
     public void setGherkinChildren(List<ScenarioDefinition> gherkinScenarios){
@@ -58,6 +82,10 @@ public class ArmaFeature extends ArmaNode{
                     setBackground(new ArmaBackground((Background) gherkinScenario));
                 }
             });
+    }
+
+    public void setLocation(ArmaLocation location){
+        this.location = location;
     }
 
     public void setLocation(Location gherkinLocation){
@@ -79,6 +107,36 @@ public class ArmaFeature extends ArmaNode{
         Matcher matcher = pattern.matcher(string);
         outter.append(matcher.replaceAll("  "));
         return outter.toString();
+    }
+
+    public void pullTags(){
+        if (hasBackground()) {
+            background.addTags(getTags());
+        }
+        scenarios.forEach(scenario -> scenario.addTags(getTags()));
+    }
+
+    public void optimizeTags(){
+        if (hasBackground()) {
+            background.removeTags(getTags());
+        }
+        scenarios.forEach(scenario -> scenario.removeTags(getTags()));
+    }
+
+    public ArmaFeature applyTagFilters(String... tagFilters){
+        ArmaFeature newFeature = new ArmaFeature(this);
+        newFeature.pullTags();
+
+        if (newFeature.hasBackground() && !newFeature.getBackground().acceptTagFilters(tagFilters)){
+            newFeature.setBackground(null);
+        }
+
+        newFeature.setScenarios(newFeature.getScenarios().stream()
+                .filter(scenario -> scenario.acceptTagFilters(tagFilters))
+                .collect(Collectors.toList()));
+
+        newFeature. optimizeTags();
+        return newFeature;
     }
 
     @Override
@@ -107,5 +165,20 @@ public class ArmaFeature extends ArmaNode{
             });
         }
         return sb.toString();
+    }
+
+    public boolean hasBackground(){
+        return background != null;
+    }
+
+    public boolean hasScenarios(){
+        return CollectionUtils.isNotEmpty(scenarios);
+    }
+
+    public List<ArmaScenarioOutline> getScenarioOutlines(){
+        return scenarios.stream()
+            .filter(scenario -> scenario instanceof ArmaScenarioOutline)
+            .map(scenario -> (ArmaScenarioOutline) scenario)
+            .collect(Collectors.toList());
     }
 }

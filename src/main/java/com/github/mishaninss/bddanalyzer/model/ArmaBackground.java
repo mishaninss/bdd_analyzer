@@ -7,7 +7,7 @@ import gherkin.ast.Background;
  */
 public class ArmaBackground extends ArmaScenario {
     public ArmaBackground(){
-
+        setKeyword("Background");
     }
 
     public ArmaBackground(Background gherkinBackground){
@@ -15,5 +15,9 @@ public class ArmaBackground extends ArmaScenario {
         setName(gherkinBackground.getName());
         setDescription(gherkinBackground.getDescription());
         setGherkinSteps(gherkinBackground.getSteps());
+    }
+
+    public ArmaBackground(ArmaBackground background){
+        super(background);
     }
 }
