@@ -7,7 +7,8 @@ import lombok.Data;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -132,25 +133,14 @@ public class ArmaStep {
     }
 
     public Map<String, Integer> getParametersUsage(){
-        Map<String, Integer> paramsUsage = new LinkedHashMap<>();
-        if (StringUtils.isBlank(text)){
-            return paramsUsage;
-        }
-        String[] paramNames = StringUtils.substringsBetween(text, "<", ">");
-        if (paramNames != null) {
-            for (String paramName : paramNames) {
-                int count = StringUtils.countMatches(text, "<" + paramName + ">");
-                paramsUsage.put(paramName, count);
-            }
+        List<Map<String, Integer>> paramsData = new LinkedList<>();
+        if (StringUtils.isNoneBlank(text)){
+            paramsData.add(ArmaScenarioOutline.getParametersUsage(text));
         }
         if (argument != null && argument instanceof ArmaDataTable){
-            Map<String, Integer> dataTableParamUsage = ((ArmaDataTable)argument).getParametersUsage();
-            dataTableParamUsage.forEach((key, value) -> {
-                int paramUsage = paramsUsage.getOrDefault(key, 0) + value;
-                paramsUsage.put(key, paramUsage);
-            });
+            paramsData.add(((ArmaDataTable)argument).getParametersUsage());
         }
-        return paramsUsage;
+        return ArmaScenarioOutline.mergeParametersUsage(paramsData);
     }
 
     @Override

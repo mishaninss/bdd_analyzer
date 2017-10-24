@@ -12,7 +12,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * Objective representation of a Gherkin Examples
  * Created by Sergey_Mishanin on 11/16/16.
+ * @see Examples
  */
 @Data
 public class ArmaExamples implements HasTags{

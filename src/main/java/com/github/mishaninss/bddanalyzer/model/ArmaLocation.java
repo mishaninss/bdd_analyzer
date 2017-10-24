@@ -5,7 +5,9 @@ import lombok.Data;
 import org.apache.commons.io.FilenameUtils;
 
 /**
+ * Objective representation of a Gherkin Location
  * Created by Sergey_Mishanin on 11/17/16.
+ * @see Location
  */
 @Data
 public class ArmaLocation {

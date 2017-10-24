@@ -3,14 +3,18 @@ package com.github.mishaninss.bddanalyzer.model;
 import gherkin.ast.Examples;
 import gherkin.ast.ScenarioOutline;
 import lombok.Data;
+import lombok.NonNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * Objective representation of a Gherkin Scenario Outline
  * Created by Sergey_Mishanin on 11/16/16.
+ * @see ScenarioOutline
  */
 @Data
 public class ArmaScenarioOutline extends ArmaScenario {
@@ -30,25 +34,12 @@ public class ArmaScenarioOutline extends ArmaScenario {
         setGherkinExamples(gherkinScenarioOutline.getExamples());
     }
 
-    public ArmaScenarioOutline(ArmaScenarioOutline scenarioOutline){
-        setKeyword(scenarioOutline.getKeyword());
-        setName(scenarioOutline.getName());
-        setDescription(scenarioOutline.getDescription());
-        setLocation(new ArmaLocation(scenarioOutline.getLocation()));
-        steps = new ArrayList<>();
-        List<ArmaStep> originSteps = scenarioOutline.getSteps();
-        if (CollectionUtils.isNotEmpty(originSteps)){
-            originSteps.forEach(originStep -> steps.add(new ArmaStep(originStep)));
-        }
-        tags = new LinkedHashSet<>();
-        Set<ArmaTag> originTags = scenarioOutline.getTags();
-        if (CollectionUtils.isNotEmpty(originTags)){
-            originTags.forEach(originTag -> tags.add(new ArmaTag(originTag)));
-        }
-        examples = new ArrayList<>();
-        List<ArmaExamples> originExamples = scenarioOutline.getExamples();
-        if (CollectionUtils.isNotEmpty(originExamples)){
-            originExamples.forEach(originExample -> examples.add(new ArmaExamples(originExample)));
+    public ArmaScenarioOutline(@NonNull ArmaScenarioOutline scenarioOutline){
+        super(scenarioOutline);
+
+        if (scenarioOutline.hasExamples()){
+            scenarioOutline.getExamples()
+                    .forEach(originExample -> examples.add(new ArmaExamples(originExample)));
         }
     }
 
@@ -161,31 +152,18 @@ public class ArmaScenarioOutline extends ArmaScenario {
     }
 
     public Map<String, Integer> getParametersUsage(){
-        Map<String, Integer> paramsUsage = new LinkedHashMap<>();
-        if (CollectionUtils.isEmpty(steps)){
-            return paramsUsage;
-        }
-        steps.forEach(step -> {
-            Map<String, Integer> stepParamUsage = step.getParametersUsage();
-            stepParamUsage.forEach((key, value) -> {
-                int paramUsage = paramsUsage.getOrDefault(key, 0) + value;
-                paramsUsage.put(key, paramUsage);
-            });
-        });
+        List<Map<String, Integer>> paramsData = new LinkedList<>();
+        paramsData.add(mergeParametersUsage(steps.stream()
+            .map(ArmaStep::getParametersUsage)
+            .collect(Collectors.toList())));
 
-        return paramsUsage;
+        paramsData.add(ArmaScenarioOutline.getParametersUsage(name));
+
+        return mergeParametersUsage(paramsData);
     }
 
     public boolean isParameterUsed(String paramName){
-        if (CollectionUtils.isEmpty(steps)){
-            return false;
-        }
-        for (ArmaStep step: steps){
-            if (step.containsParameter(paramName)){
-                return true;
-            }
-        }
-        return false;
+        return getParametersUsage().get(paramName) != null;
     }
 
     @Override
@@ -199,5 +177,56 @@ public class ArmaScenarioOutline extends ArmaScenario {
         }
 
         return sb.toString();
+    }
+
+    public boolean hasExamples(){
+        return CollectionUtils.isNotEmpty(examples);
+    }
+
+    public static Map<String, Integer> getParametersUsage(String text){
+        Map<String, Integer> paramsUsage = new LinkedHashMap<>();
+        if (StringUtils.isBlank(text)){
+            return paramsUsage;
+        }
+        String[] paramNames = StringUtils.substringsBetween(text, "<", ">");
+        if (paramNames != null) {
+            for (String paramName : paramNames) {
+                int count = StringUtils.countMatches(text, "<" + paramName + ">");
+                paramsUsage.put(paramName, count);
+            }
+        }
+        return paramsUsage;
+    }
+
+    public static Map<String, Integer> getParametersUsage(String... values){
+        List<Map<String,Integer>> paramsData = new LinkedList<>();
+        for(String value: values){
+            paramsData.add(getParametersUsage(value));
+        }
+        return mergeParametersUsage(paramsData);
+    }
+
+    public static Map<String, Integer> mergeParametersUsage(Iterable<Map<String, Integer>> paramsData){
+        Map<String, Integer> paramsUsage = new LinkedHashMap<>();
+        for (Map<String, Integer> data: paramsData){
+            data.forEach((key, val) ->
+                    paramsUsage.put(key, paramsUsage.getOrDefault(key, 0) + val)
+            );
+        }
+        return paramsUsage;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ArmaScenarioOutline)) return false;
+        if (!super.equals(o)) return false;
+        ArmaScenarioOutline that = (ArmaScenarioOutline) o;
+        return Objects.equals(examples, that.examples);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), examples);
     }
 }

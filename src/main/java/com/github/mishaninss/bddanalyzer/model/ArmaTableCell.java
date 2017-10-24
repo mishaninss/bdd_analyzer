@@ -4,7 +4,6 @@ import gherkin.ast.TableCell;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -37,18 +36,7 @@ public class ArmaTableCell {
     }
 
     public Map<String, Integer> getParametersUsage() {
-        Map<String, Integer> paramsUsage = new LinkedHashMap<>();
-        if (StringUtils.isBlank(value)) {
-            return paramsUsage;
-        }
-        String[] paramNames = StringUtils.substringsBetween(value, "<", ">");
-        if (paramNames != null) {
-            for (String paramName : paramNames) {
-                int count = StringUtils.countMatches(value, "<" + paramName + ">");
-                paramsUsage.put(paramName, count);
-            }
-        }
-        return paramsUsage;
+        return ArmaScenarioOutline.getParametersUsage(value);
     }
 
     public void applyParameter(String paramName, String value) {

@@ -83,19 +83,9 @@ public class ArmaTableRow {
     }
 
     public Map<String, Integer> getParametersUsage(){
-        Map<String, Integer> paramsUsage = new LinkedHashMap<>();
-        if (CollectionUtils.isEmpty(cells)){
-            return paramsUsage;
-        }
-        cells.forEach(cell -> {
-            Map<String, Integer> stepParamUsage = cell.getParametersUsage();
-            stepParamUsage.forEach((key, value) -> {
-                int paramUsage = paramsUsage.getOrDefault(key, 0) + value;
-                paramsUsage.put(key, paramUsage);
-            });
-        });
-
-        return paramsUsage;
+        return ArmaScenarioOutline.mergeParametersUsage(cells.stream()
+                .map(ArmaTableCell::getParametersUsage)
+                .collect(Collectors.toList()));
     }
 
     public void applyParameter(String paramName, String value){

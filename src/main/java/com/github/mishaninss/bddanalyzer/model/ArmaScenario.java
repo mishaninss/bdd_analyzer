@@ -2,6 +2,7 @@ package com.github.mishaninss.bddanalyzer.model;
 
 import gherkin.ast.Location;
 import gherkin.ast.Scenario;
+import gherkin.ast.Step;
 import gherkin.ast.Tag;
 import lombok.Data;
 import lombok.NonNull;
@@ -13,7 +14,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * Objective representation of a Gherkin Scenario
  * Created by Sergey_Mishanin on 11/16/16.
+ * @see Scenario
  */
 @Data
 public class ArmaScenario extends ArmaNode implements HasTags{
@@ -39,19 +42,18 @@ public class ArmaScenario extends ArmaNode implements HasTags{
         setName(scenario.getName());
         setDescription(scenario.getDescription());
         setLocation(new ArmaLocation(scenario.getLocation()));
-        steps = new ArrayList<>();
-        List<ArmaStep> originSteps = scenario.getSteps();
-        if (CollectionUtils.isNotEmpty(originSteps)){
-            originSteps.forEach(originStep -> steps.add(new ArmaStep(originStep)));
+
+        if (scenario.hasSteps()){
+            scenario.getSteps()
+                    .forEach(originStep -> addStep(new ArmaStep(originStep)));
         }
-        tags = new LinkedHashSet<>();
-        Set<ArmaTag> originTags = scenario.getTags();
-        if (CollectionUtils.isNotEmpty(originTags)){
-            originTags.forEach(originTag -> addTag(new ArmaTag(originTag)));
+        if (scenario.hasTags()){
+            scenario.getTags()
+                    .forEach(originTag -> addTag(new ArmaTag(originTag)));
         }
     }
 
-    public void setGherkinSteps(List<gherkin.ast.Step> gherkinSteps){
+    public void setGherkinSteps(List<Step> gherkinSteps){
         if (CollectionUtils.isEmpty(gherkinSteps)){
             return;
         }
@@ -158,5 +160,46 @@ public class ArmaScenario extends ArmaNode implements HasTags{
             steps.forEach(step -> sb.append("\n").append(ArmaFeature.addPad(step.toString())));
         }
         return sb.toString();
+    }
+
+    public boolean hasSteps(){
+        return CollectionUtils.isNotEmpty(steps);
+    }
+
+    public void addStep(ArmaStep step){
+        steps.add(step);
+    }
+
+    public List<Integer> getStepDefUsage(ArmaStepDef stepDef){
+        List<Integer> stepsIndexes = new LinkedList<>();
+        if (hasSteps()){
+            for (int i=0; i<steps.size(); i++){
+                ArmaStep step = steps.get(i);
+                if (step.isImplemented() && step.getStepDef().equals(stepDef)){
+                    stepsIndexes.add(i);
+                }
+            }
+        }
+        return stepsIndexes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ArmaScenario)) return false;
+        if (!super.equals(o)) return false;
+        ArmaScenario that = (ArmaScenario) o;
+        return Objects.equals(location, that.location) &&
+                Objects.equals(steps, that.steps) &&
+                Objects.equals(tags, that.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), location, steps, tags);
+    }
+
+    public List<ArmaStepDef> mapStepsToStepDefinitions(){
+        return getSteps().stream().map(ArmaStep::getStepDef).collect(Collectors.toList());
     }
 }

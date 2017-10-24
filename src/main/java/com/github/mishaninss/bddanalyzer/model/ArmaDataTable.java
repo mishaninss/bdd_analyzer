@@ -8,7 +8,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * Objective representation of a Gherkin Data Table
  * Created by Sergey_Mishanin on 11/17/16.
+ * @see DataTable
  */
 @Data
 public class ArmaDataTable {
@@ -51,19 +53,9 @@ public class ArmaDataTable {
     }
 
     public Map<String, Integer> getParametersUsage(){
-        Map<String, Integer> paramsUsage = new LinkedHashMap<>();
-        if (CollectionUtils.isEmpty(rows)){
-            return paramsUsage;
-        }
-        rows.forEach(row -> {
-            Map<String, Integer> rowParamUsage = row.getParametersUsage();
-            rowParamUsage.forEach((key, value) -> {
-                int paramUsage = paramsUsage.getOrDefault(key, 0) + value;
-                paramsUsage.put(key, paramUsage);
-            });
-        });
-
-        return paramsUsage;
+        return ArmaScenarioOutline.mergeParametersUsage(rows.stream()
+                .map(ArmaTableRow::getParametersUsage)
+                .collect(Collectors.toList()));
     }
 
     public void applyParameter(String paramName, String value){

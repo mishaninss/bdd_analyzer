@@ -4,7 +4,9 @@ import gherkin.ast.DocString;
 import lombok.Data;
 
 /**
+ * Objective representation of a Gherkin Doc String
  * Created by Sergey_Mishanin on 11/17/16.
+ * @see DocString
  */
 @Data
 public class ArmaDocString {

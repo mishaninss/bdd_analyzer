@@ -13,7 +13,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
+ * Objective representation of a Gherkin Feature
  * Created by Sergey_Mishanin on 11/16/16.
+ * @see Feature
  */
 @Data
 public class ArmaFeature extends ArmaNode implements HasTags{
