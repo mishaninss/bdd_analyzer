@@ -23,7 +23,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--libs list-->
         <lombok.version>1.16.18</lombok.version>
-        <javaparser.version>2.5.1</javaparser.version>
+        <javaparser.version>3.8.0</javaparser.version>
         <gerkgin.version>4.1.3</gerkgin.version>
         <apache.commons.version>4.1</apache.commons.version>
         <apache.commons-lang3.version>3.6</apache.commons-lang3.version>

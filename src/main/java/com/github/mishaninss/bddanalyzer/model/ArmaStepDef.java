@@ -5,6 +5,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Objects;
 
+import static com.github.mishaninss.bddanalyzer.model.ArmaProject.GSON;
+
 /**
  * Created by Sergey_Mishanin on 11/15/16.
  */
@@ -17,12 +19,7 @@ public class ArmaStepDef {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("text", text)
-                .append("description", description)
-                .append("location", location)
-                .append("implemented", implemented)
-                .toString();
+        return GSON.toJson(this);
     }
 
     public ArmaTableRow toTableRow(){

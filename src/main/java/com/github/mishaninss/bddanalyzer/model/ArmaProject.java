@@ -2,6 +2,8 @@ package com.github.mishaninss.bddanalyzer.model;
 
 import com.github.mishaninss.bddanalyzer.GherkinScanner;
 import com.github.mishaninss.bddanalyzer.StepDefinitionsScanner;
+import gherkin.deps.com.google.gson.Gson;
+import gherkin.deps.com.google.gson.GsonBuilder;
 import lombok.Data;
 import lombok.NonNull;
 import org.apache.commons.collections4.CollectionUtils;
@@ -18,6 +20,7 @@ import java.util.stream.Stream;
  */
 @Data
 public class ArmaProject {
+    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private final String stepDefsRoot;
     private final String featuresRoot;
     private List<ArmaFeature> features;
@@ -320,6 +323,14 @@ public class ArmaProject {
 
     private static void applyStepDef(List<ArmaStepDef> stepDefs, ArmaStep step, String text){
         for (ArmaStepDef stepDef: stepDefs){
+            if (stepDef == null) {
+                System.out.println("WARNING step def is null " + text);
+                continue;
+            }
+            if (stepDef.getText() == null) {
+                System.out.println("WARNING step def text is null " + text);
+                continue;
+            }
             Pattern pattern = Pattern.compile(stepDef.getText());
             Matcher matcher = pattern.matcher(text);
             if (matcher.matches()){
